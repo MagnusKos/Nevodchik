@@ -26,6 +26,7 @@ MANIFEST
 venv/
 env/
 .env
+.env.local
 .venv/
 ENV/
 env.bak/
@@ -52,6 +53,9 @@ build/
 .podman-desktop/
 podman.sock
 podman-compose.override.yml
+
+# Tests
+tests/test.conf.local
 
 # Other
 Thumbs.db
