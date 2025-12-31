@@ -32,6 +32,35 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked
 
 
+# --- Test Stage ---
+    
+FROM ghcr.io/astral-sh/uv:0.9.20-python3.14-alpine AS tester
+
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+ENV UV_NO_DEV=0
+ENV UV_PYTHON_DOWNLOADS=0
+
+WORKDIR /nevodchik
+
+COPY uv.lock pyproject.toml ./
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-install-project --all-extras
+
+COPY . /nevodchik
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --all-extras
+
+ENV USER="nevodchik"
+RUN addgroup -S ${USER} && adduser -D -G ${USER} -S ${USER}
+RUN chown -R ${USER}:${USER} /nevodchik
+
+USER ${USER}
+
+CMD ["pytest", "-v"]
+
 
 # --- Work Stage ---
 
@@ -59,7 +88,7 @@ RUN addgroup -S ${USER} \
 COPY --from=builder --chown=nevodchik:nevodchik /nevodchik /nevodchik
 
 # Place executables in the environment at the front of the path
-ENV PATH="/nevodchik/.venv/bin:$PATH"
+ENV PATH="/nevod/.venv/bin:$PATH"
 
 # User to start an app
 USER ${USER}
