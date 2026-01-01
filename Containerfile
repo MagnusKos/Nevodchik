@@ -33,7 +33,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 
 # --- Test Stage ---
-    
+
 FROM ghcr.io/astral-sh/uv:0.9.20-python3.14-alpine AS tester
 
 ENV UV_COMPILE_BYTECODE=1
@@ -53,24 +53,24 @@ COPY . /nevodchik
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --all-extras
 
-ENV USER="nevodchik"
+ENV USER="tester"
 RUN addgroup -S ${USER} && adduser -D -G ${USER} -S ${USER}
 RUN chown -R ${USER}:${USER} /nevodchik
 
 USER ${USER}
 
-CMD ["pytest", "-v"]
+CMD ["uv", "run", "pytest", "-v", "--tb=short"]
 
 
 # --- Work Stage ---
 
-FROM python:3.14-alpine
+FROM python:3.14-alpine as worker
 
 # --- Environment vars to be set externally ---
 ENV MQTT_HOST="localhost"
 ENV MQTT_PORT=1883
 ENV MQTT_USER="user"
-ENV MQTT_PASS="pass"
+ENV MQTT_PASSW="pass"
 
 ENV IRC_HOST="localhost"
 ENV IRC_PORT=6667
@@ -88,7 +88,7 @@ RUN addgroup -S ${USER} \
 COPY --from=builder --chown=nevodchik:nevodchik /nevodchik /nevodchik
 
 # Place executables in the environment at the front of the path
-ENV PATH="/nevod/.venv/bin:$PATH"
+ENV PATH="/nevodchik/.venv/bin:$PATH"
 
 # User to start an app
 USER ${USER}
