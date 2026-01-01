@@ -2,14 +2,27 @@
 requires = ["uv_build>=0.9.20,<0.10.0"]
 build-backend = "uv_build"
 
+
 [project]
 version = "0.0.0"
 name = "nevodchik"
 requires-python = ">=3.14"
 readme = "README.md"
+dependencies = [
+    "paho-mqtt"
+]
 classifiers = [
     "Private :: Do Not Upload"
 ]
+
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-timeout>=2.1",
+    "python-dotenv>=0.20"
+]
+
 
 [project.scripts]
 nevodchik = "nevodchik.main:run"
