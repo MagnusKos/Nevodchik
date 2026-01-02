@@ -6,77 +6,86 @@ from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
+
+@dataclass
 class ConfigMQTT:
-    def __init__(self, config_path_str: str = "./config/nevodchik.conf"):
-        self.host = ""
-        self.port = 0
-        self.user = ""
-        self.passw = ""
-        self.topics = []
+    host: str
+    port: int
+    user: str
+    passw: str
+    topics: List[str]
+    pass
 
-        self.config_path_str = config_path_str
+
+class ConfigApp:
+    def __init__(self, config_path: str = "./config/nevodchik.conf"):
+        self.config_path = Path(config_path)
+
+        # Set defaults
+        self.config_mqtt = ConfigMQTT(
+            host="localhost", port=1883, user="", passw="", topics=["msh/#"]
+        )
+
+        # Load actual parameters
         self._load_config()
-
-    def log_params(self):
-        logger.info("Config in use:")
-        logger.info(f"\tHost: {self.host}")
-        logger.info(f"\tPort: {self.port}")
-        logger.info(f"\tUser: {self.user }")
-        logger.info(f"\tPassw: {self.passw }")
-        logger.info(f"\tTopics: {self.topics}")
         pass
 
-    def _load_config(self):
-        config_default = {
+    def _load_config():
+        # Defaults if there are no config files or env-vars
+        defaults = {
             "mqtt": {
-                "host": "localhost",
-                "port": 1883,
-                "user": "",
-                "passw": "",
-                "topics": ["msh/#"],
+                "host": self.mqtt.host,
+                "port": self.mqtt.port,
+                "user": self.mqtt.user,
+                "passw": self.mqtt.passw,
+                "topics": self.mqtt.topics,
             }
         }
 
-        config_path = Path(self.config_path_str)
-        if config_path.is_file():
-            with config_path.open(mode="rb") as f:
+        # Load from config file
+        if self.config_path.is_file():
+            with self.config_path.open("rb") as f:
                 config_file = tomllib.load(f)
-                logger.debug(f"Loaded config file: {config_file}.")
-                config_default["mqtt"].update(config_file.get("mqtt", {}))
+                logger.debug(f"Loaded config file: {self.config_path}")
+
+                # Merge file config with defaults
+                for section in defaults:
+                    if section in config_file:
+                        defaults[section].update(config_file[section])
         else:
-            logger.warning(
-                f"Config file {self.config_path_str} not found, using defaults."
-            )
+            logger.warning(f"Config file {self.config_path} not found, using defaults.")
 
-        config_mqtt = config_default["mqtt"]
-        env_mapping = {
-            "MQTT_HOST": config_mqtt["host"],
-            "MQTT_PORT": config_mqtt["port"],
-            "MQTT_USER": config_mqtt["user"],
-            "MQTT_PASSW": config_mqtt["passw"],
-        }
+        # Override with environment variables
+        self._apply_env_overrides(defaults)
 
-        for env_key, default_value in env_mapping.items():
-            env_value = os.getenv(env_key)
-            if env_value is not None:
-                if env_key == "MQTT_PORT":
-                    config_mqtt["port"] = int(env_value)
-                else:
-                    config_mqtt[env_key.lower().replace("mqtt_", "")] = env_value
+        # Populate dataclasses
+        self.config_mqtt = ConfigMQTT(**defaults["mqtt"])
 
-        self.host = config_mqtt["host"]
-        self.port = config_mqtt["port"]
-        self.user = config_mqtt["user"]
-        self.passw = config_mqtt["passw"]
-        self.topics = config_mqtt["topics"]
-        self.log_params()
+        self._log_config()
         pass
 
-    def get_connection_params(self):
-        return {
-            "hostname": self.host,
-            "port": self.port,
-            "username": self.user or None,
-            "password": self.passw or None,
+    def _apply_env_overrides(self, config: Dict[str, Any]):
+        env_mapping = {
+            "MQTT_HOST": ("mqtt", "host"),
+            "MQTT_PORT": ("mqtt", "port"),
+            "MQTT_USER": ("mqtt", "user"),
+            "MQTT_PASSW": ("mqtt", "passw"),
         }
 
+        for env_key, (section, key) in env_mapping.items():
+            value = os.getenv(env_key)
+            if value is not None:
+                if key == "port":
+                    config[section][key] = int(value)
+                else:
+                    config[section][key] = value
+        pass
+
+    def _log_config(self):
+        logger.info("Configuration loaded:")
+        logger.info(
+            f"\tMQTT: {self.mqtt.host}:{self.mqtt.port} (topics: {self.mqtt.topics})"
+        )
+        pass
+
+    pass
