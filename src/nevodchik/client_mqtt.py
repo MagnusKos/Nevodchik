@@ -2,15 +2,17 @@ import asyncio
 import signal
 import sys
 import logging
-from config import ConfigApp
+from .config import ConfigApp
+from .message_processor import MessageProcessor
 import paho.mqtt.client as mqtt
 
 logger = logging.getLogger(__name__)
 
 
 class ClientMQTT:
-    def __init__(self, config: ConfigApp):
+    def __init__(self, config: ConfigApp, processor: MessageProcessor):
         self.config = config.config_mqtt
+        self.processor = processor
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
@@ -33,11 +35,15 @@ class ClientMQTT:
         pass
 
     def on_message(self, client, userdata, msg):
-        try:
-            payload = msg.payload.decode("utf-8", errors="ignore")
-        except Exception:
-            payload = msg.payload.hex()
-        logger.debug(f"{msg.topic}: {payload} | QoS: {msg.qos}")
+        if self.processor:
+            self.processor.process_mqtt_message(msg.topic, msg.payload)
+        else:
+            payload = ""
+            try:
+                payload = msg.payload.decode("utf-8", errors="ignore")
+            except Exception:
+                payload = msg.payload.hex()
+            logger.debug(f"{msg.topic}: {msg.payload} | QoS: {msg.qos}")
         pass
 
     def on_disconnect(self, client, userdata, flags, reason_code, properties):
