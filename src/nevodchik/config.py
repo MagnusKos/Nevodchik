@@ -31,6 +31,14 @@ class ConfigApp:
         self._load_config()
         pass
 
+    def __str__(self):
+        str_list = ["***"]
+        if self.config_path.is_file:
+            str_list.append(f"File in use: {self.config_path.absolute()}")
+        str_list.append(f"{str(self.config_mqtt)}")
+        str_list.append("***")
+        return "\n".join(str_list)
+
     def _load_config(self):
         # Defaults if there are no config files or env-vars
         defaults = {
@@ -65,7 +73,7 @@ class ConfigApp:
         self._log_config()
         pass
 
-    def _apply_env_overrides(self, config: Dict[str, Any]):
+    def _apply_env_overrides(self, config_dict: Dict[str, Any]):
         env_mapping = {
             "MQTT_HOST": ("mqtt", "host"),
             "MQTT_PORT": ("mqtt", "port"),
@@ -77,9 +85,9 @@ class ConfigApp:
             value = os.getenv(env_key)
             if value is not None:
                 if key == "port":
-                    config[section][key] = int(value)
+                    config_dict[section][key] = int(value)
                 else:
-                    config[section][key] = value
+                    config_dict[section][key] = value
         pass
 
     def _log_config(self):
