@@ -6,16 +6,19 @@ import os
 from pathlib import Path
 
 from client_mqtt import ClientMQTT
-from config import ConfigMQTT
+from config import ConfigApp
 
 logger = logging.getLogger("TestMQTT")
+
 
 @pytest.mark.smoke
 def test_connection_client_mqtt():
     test_conf_str = "./tests/test.conf.local"
     test_conf_path = Path(test_conf_str)
 
-    test_conf_mqtt = ConfigMQTT(config_path_str=test_conf_str if test_conf_path.is_file() else None)
+    test_conf_mqtt = ConfigApp(
+        config_path_str=test_conf_str if test_conf_path.is_file() else None
+    )
     test_client_mqtt = ClientMQTT(test_conf_mqtt)
 
     packet_received_event = threading.Event()
