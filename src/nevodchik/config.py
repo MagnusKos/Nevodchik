@@ -2,6 +2,7 @@ import os
 import tomllib
 import logging
 from pathlib import Path
+from dataclasses import dataclass
 from typing import List, Optional
 
 logger = logging.getLogger(__name__)
@@ -18,8 +19,8 @@ class ConfigMQTT:
 
 
 class ConfigApp:
-    def __init__(self, config_path: str = "./config/nevodchik.conf"):
-        self.config_path = Path(config_path)
+    def __init__(self, config_path_str: str = "./config/nevodchik.conf"):
+        self.config_path = Path(config_path_str)
 
         # Set defaults
         self.config_mqtt = ConfigMQTT(
@@ -30,15 +31,15 @@ class ConfigApp:
         self._load_config()
         pass
 
-    def _load_config():
+    def _load_config(self):
         # Defaults if there are no config files or env-vars
         defaults = {
             "mqtt": {
-                "host": self.mqtt.host,
-                "port": self.mqtt.port,
-                "user": self.mqtt.user,
-                "passw": self.mqtt.passw,
-                "topics": self.mqtt.topics,
+                "host": self.config_mqtt.host,
+                "port": self.config_mqtt.port,
+                "user": self.config_mqtt.user,
+                "passw": self.config_mqtt.passw,
+                "topics": self.config_mqtt.topics,
             }
         }
 
@@ -84,7 +85,7 @@ class ConfigApp:
     def _log_config(self):
         logger.info("Configuration loaded:")
         logger.info(
-            f"\tMQTT: {self.mqtt.host}:{self.mqtt.port} (topics: {self.mqtt.topics})"
+            f"\tMQTT: {self.config_mqtt.host}:{self.config_mqtt.port} (topics: {self.config_mqtt.topics})"
         )
         pass
 
