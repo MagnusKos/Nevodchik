@@ -46,12 +46,6 @@ case "${1:-run}" in
         echo "Starting application container..."
         podman run \
             --name "$CONTAINER_NAME" \
-            -v "$(pwd):/nevodchik" \
-            -v /nevodchik/.venv \
-            -e MQTT_HOST="${MQTT_HOST:-localhost}" \
-            -e MQTT_PORT="${MQTT_PORT:-1883}" \
-            -e MQTT_USER="${MQTT_USER:-user}" \
-            -e MQTT_PASS="${MQTT_PASS:-pass}" \
             "$IMAGE_NAME"
         ;;
     

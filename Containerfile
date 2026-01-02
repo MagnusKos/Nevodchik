@@ -67,16 +67,16 @@ CMD ["uv", "run", "pytest", "-v", "--tb=short"]
 FROM python:3.14-alpine as worker
 
 # --- Environment vars to be set externally ---
-ENV MQTT_HOST="localhost"
-ENV MQTT_PORT=1883
-ENV MQTT_USER="user"
-ENV MQTT_PASSW="pass"
+# ENV MQTT_HOST="localhost"
+# ENV MQTT_PORT=1883
+# ENV MQTT_USER="user"
+# ENV MQTT_PASSW="pass"
 
-ENV IRC_HOST="localhost"
-ENV IRC_PORT=6667
-ENV IRC_NICK="Nevodchik"
+# ENV IRC_HOST="localhost"
+# ENV IRC_PORT=6667
+# ENV IRC_NICK="Nevodchik"
 
-ENV TG_TOKEN=""
+# ENV TG_TOKEN=""
 # --- ---
 
 # Create a new user
@@ -89,6 +89,9 @@ COPY --from=builder --chown=nevodchik:nevodchik /nevodchik /nevodchik
 
 # Place executables in the environment at the front of the path
 ENV PATH="/nevodchik/.venv/bin:$PATH"
+
+# Disable Python output buffering so logs appear immediately
+ENV PYTHONUNBUFFERED=1
 
 # User to start an app
 USER ${USER}
