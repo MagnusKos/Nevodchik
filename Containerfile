@@ -8,8 +8,8 @@ ENV UV_COMPILE_BYTECODE=1
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
 
-# Omit development dependencies
-ENV UV_NO_DEV=1
+# Add dev dependencies
+ENV UV_NO_DEV=0
 
 # Don't redownload Python, we already have it
 ENV UV_PYTHON_DOWNLOADS=0
@@ -24,9 +24,14 @@ WORKDIR /nevodchik
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --locked --no-install-project
+    uv sync --locked --no-install-project --extra dev
 
 COPY . /nevodchik
+
+RUN apk add --no-cache bash curl unzip && \
+    bash dload-protobufs.sh && \
+    bash build-protobufs.sh && \
+    apk del bash curl unzip
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked
