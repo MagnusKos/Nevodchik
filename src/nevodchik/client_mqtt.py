@@ -50,7 +50,17 @@ class ClientMQTT:
         logger.info(f"Disconnected: {reason_code}")
         pass
 
-    def run(self):
+    def run(self, blocking=True):
         self.setup()
-        self.client.loop_forever()
+        if blocking:
+            logger.info("Starting MQTT client (blocking)...")
+            self.client.loop_forever()
+        else:
+            logger.info("Starting MQTT client (non-blocking)...")
+            self.client.loop_start()
         pass
+
+    def stop(self):
+        self.client.loop_stop()
+        self.client.disconnect()
+        logger.info("MQTT client stopped.")
