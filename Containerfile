@@ -4,16 +4,12 @@ FROM ghcr.io/astral-sh/uv:0.9.20-python3.14-alpine AS builder
 
 # Enable bytecode compilation
 ENV UV_COMPILE_BYTECODE=1
-
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
-
 # Add dev dependencies
 ENV UV_NO_DEV=0
-
 # Don't redownload Python, we already have it
 ENV UV_PYTHON_DOWNLOADS=0
-
 # Ensure installed tools can be executed out of the box
 ENV UV_TOOL_BIN_DIR=/usr/local/bin
 
@@ -28,10 +24,20 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 COPY . /nevodchik
 
+# Download protobufs
 RUN apk add --no-cache bash curl unzip && \
     bash dload-protobufs.sh && \
-    bash build-protobufs.sh && \
     apk del bash curl unzip
+
+# Build protobufs (yep, this is not from build-protobufs.sh)
+RUN /nevodchik/.venv/bin/python -m grpc_tools.protoc \
+    -I"src/protobufs" \
+    --python_out="src/generated" \
+    --pyi_out="src/generated" \
+    --grpc_python_out="src/generated" \
+    $(find src/protobufs/meshtastic -name "*.proto" ! -name "deviceonly.proto") && \
+    mkdir -p src/generated/meshtastic && \
+    touch src/generated/__init__.py src/generated/meshtastic/__init__.py
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked
@@ -98,10 +104,14 @@ ENV PATH="/nevodchik/.venv/bin:$PATH"
 # Disable Python output buffering so logs appear immediately
 ENV PYTHONUNBUFFERED=1
 
+RUN echo $PYTHONPATH
+ENV PYTHONPATH="/nevodchik/src/generated:/nevodchik/src:${PYTHONPATH}"
+
 # User to start an app
 USER ${USER}
 
 WORKDIR /nevodchik
+
 
 # Run!
 CMD ["nevodchik"]

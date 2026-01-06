@@ -7,13 +7,12 @@ OUTPUT_DIR="src/generated"
 mkdir -p "$OUTPUT_DIR/meshtastic"
 
 echo "Generating Python protobuf code..."
-for proto_file in "$PROTO_DIR"/meshtastic/*.proto; do
-    python -m grpc_tools.protoc \
-        -I"$PROTO_DIR" \
-        --python_out="$OUTPUT_DIR" \
-        --pyi_out="$OUTPUT_DIR" \
-        "$proto_file"
-done
+uv run python -m grpc_tools.protoc \
+  -I"$PROTO_DIR" \
+  --python_out="$OUTPUT_DIR" \
+  --pyi_out="$OUTPUT_DIR" \
+  --grpc_python_out="$OUTPUT_DIR" \
+  $(find "$PROTO_DIR/meshtastic" -name "*.proto" ! -name "deviceonly.proto")
 
 # Create __init__.py
 touch "$OUTPUT_DIR/__init__.py"
