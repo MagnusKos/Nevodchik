@@ -6,7 +6,9 @@ from .config import ConfigApp
 from .connector_mqtt import ConnectorMQTT
 from .message_processor import MessageProcessor
 from .broker import MessageBroker
+
 from .client_console import ClientConsole
+from .client_telegram import ClientTelegram
 
 default_config_file = "./config/nevodchik.conf"
 
@@ -37,10 +39,13 @@ def run():
     connector_mqtt = ConnectorMQTT(config, processor)
 
     client_console = ClientConsole(config, broker)
+    client_telegram = ClientTelegram(config, broker)
+    client_telegram.start()
 
     try:
         connector_mqtt.run()
     except KeyboardInterrupt:
         logger.warning("Keyboard interruption, exiting...")
         print("Keyboard interruption, exiting...")
+        client_telegram.stop()
     pass
