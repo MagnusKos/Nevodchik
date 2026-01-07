@@ -18,8 +18,8 @@ WORKDIR /nevodchik
 
 # Install the project's dependencies using the lockfile and settings
 RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=./uv.lock,target=/nevodchik/uv.lock \
+    --mount=type=bind,source=./pyproject.toml,target=/nevodchik/pyproject.toml \
     uv sync --locked --no-install-project --extra dev
 
 COPY . /nevodchik
