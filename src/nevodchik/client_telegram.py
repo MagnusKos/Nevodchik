@@ -22,6 +22,7 @@ class ClientTelegram():
 
         self.bot = Bot(token=self.config.token)
         self.chat = self.config.chat
+        self.topic = self.config.topic
         self.message_queue: Queue[str] = Queue()
         self.loop: asyncio.AbstractEventLoop | None = None
         self.thread: Thread | None = None
@@ -84,6 +85,6 @@ class ClientTelegram():
     async def _send_message(self, message: str) -> None:
         """Send message to Telegram."""
         try:
-            await self.bot.send_message(chat_id=self.chat, text=message)
+            await self.bot.send_message(chat_id=self.chat, text=message, message_thread_id=self.topic)
         except TelegramError as e:
             logger.error(f"Telegram error: {e}")

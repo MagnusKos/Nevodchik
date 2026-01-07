@@ -22,6 +22,7 @@ class ConfigMQTT:
 class ConfigTelegram:
     token: str
     chat: int
+    topic: int | None
     pass
 
 
@@ -34,7 +35,7 @@ class ConfigApp:
             host="localhost", port=1883, user="", passw="", topics=["msh/#"]
         )
         self.config_telegram = ConfigTelegram(
-            token="4815162342:VGhlIE51bWJlcnMgUzFFMTg=", chat=-100
+            token="4815162342:VGhlIE51bWJlcnMgUzFFMTg=", chat=-100, topic=None
         )
 
         # Load actual parameters
@@ -61,8 +62,9 @@ class ConfigApp:
             },
             "telegram": {
                 "token": self.config_telegram.token,
-                "chat": self.config_telegram.chat
-            }
+                "chat": self.config_telegram.chat,
+                "topic": self.config_telegram.topic,
+            },
         }
 
         # Load from config file
@@ -96,6 +98,7 @@ class ConfigApp:
             "MQTT_PASSW": ("mqtt", "passw"),
             "TG_TOKEN": ("telegram", "token"),
             "TG_CHAT": ("telegram", "chat"),
+            "TG_TOPIC": ("telegram", "topic"),
         }
 
         for env_key, (section, key) in env_mapping.items():
@@ -115,7 +118,7 @@ class ConfigApp:
 
         token_state = "set" if self.config_telegram.token else "not set"
         logger.info(
-            f"\tTelegram: token is {token_state}, chat id = {self.config_telegram.chat})"
+            f"\tTelegram: token is {token_state}, chat id = {self.config_telegram.chat}, topic id = {self.config_telegram.topic})"
         )
         pass
 
