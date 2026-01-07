@@ -51,28 +51,57 @@ case "${1:-run}" in
 
         while [ $# -gt 1 ]; do
             case "$2" in
-            -d|--debug)
-                LOG_LEVEL="DEBUG"
-                shift
-                ;;
-            -v|--verbose)
-                LOG_LEVEL="INFO"
-                shift
-                ;;
-            -w|--warning)
-                LOG_LEVEL="WARNING"
-                shift
-                ;;
-            *)
-                shift
-                ;;
+                -c)
+                    if [[ -z "$3" ]] || [[ "$3" == -* ]]; then
+                        echo "Error: -c requires a value" >&2
+                        exit 1
+                    fi
+                    config_value="$3"
+                    shift 2
+                    ;;
+                -v)
+                    if [[ -z "$3" ]] || [[ "$3" == -* ]]; then
+                        echo "Error: -v requires a value (1-3)" >&2
+                        exit 1
+                    fi
+                    verbose_value="$3"
+                    # Validate -v value is 1, 2, or 3
+                    if [[ ! "$verbose_value" =~ ^[1-3]$ ]]; then
+                        echo "Error: -v value must be 1, 2, or 3 (got: $verbose_value)" >&2
+                        exit 1
+                    fi
+                    shift 2
+                    ;;
+                *)
+                    echo "Error: Unknown argument '$2'" >&2
+                    exit 1
+                    ;;
             esac
         done
+
+        if [[ -n "$verbose_value" ]]; then
+            case "$verbose_value" in
+                1)
+                    LOG_LEVEL="WARNING"
+                    ;;
+                2)
+                    LOG_LEVEL="INFO"
+                    ;;
+                3)
+                    LOG_LEVEL="DEBUG"
+                    ;;
+            esac
+        fi
+
         
         echo "Starting application container..."
+        echo "Envs from args:"
+        echo "  CONFIG_FILE=${config_value:-UNSET}"
+        echo "  LOG_LEVEL=${LOG_LEVEL:-UNSET}"
         podman run \
             --rm \
             --name "$CONTAINER_NAME" \
+            -e CONFIG_FILE="$config_value" \
             -e LOG_LEVEL="$LOG_LEVEL" \
             "$IMAGE_NAME"
         ;;
@@ -135,10 +164,9 @@ case "${1:-run}" in
         echo ""
         echo "If no command provided, then RUN will be used."
         echo ""
-        echo "Run options (use one or none):"
-        echo "  -w | --warning : prints warning log messages"
-        echo "  -v | --verbose : prints information log messages"
-        echo "  -d | --debug : prints debug log messages"
+        echo "Run options:"
+        echo "  -v [level]   verbose, level is a num: 1 (WARN), 2 (INFO), 3 (DEBUG)"
+        echo "  -c [path]    config, path to the config-file to be used"
         exit 1
         ;;
 esac
