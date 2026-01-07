@@ -5,18 +5,25 @@ import sys
 import os
 from pathlib import Path
 
-from client_mqtt import ClientMQTT
-from config import ConfigMQTT
+from nevodchik.connector_mqtt import ConnectorMQTT
+from nevodchik.config import ConfigApp
+from nevodchik.message_processor import MessageProcessor, MessageText
+from nevodchik.broker import MessageBroker
+from nevodchik.client_console import ClientConsole
 
 logger = logging.getLogger("TestMQTT")
+
 
 @pytest.mark.smoke
 def test_connection_client_mqtt():
     test_conf_str = "./tests/test.conf.local"
     test_conf_path = Path(test_conf_str)
 
-    test_conf_mqtt = ConfigMQTT(config_path_str=test_conf_str if test_conf_path.is_file() else None)
-    test_client_mqtt = ClientMQTT(test_conf_mqtt)
+    test_conf = ConfigApp(
+        config_path_str=test_conf_str if test_conf_path.is_file() else None
+    )
+    test_processor = MessageProcessor(test_conf)
+    test_client_mqtt = ConnectorMQTT(test_conf, test_processor)
 
     packet_received_event = threading.Event()
     on_message_orig = test_client_mqtt.on_message
@@ -49,3 +56,32 @@ def test_connection_client_mqtt():
         test_client_mqtt.client.loop_stop()
         test_client_mqtt.client.disconnect()
     pass
+
+
+@pytest.mark.smoke
+def test_decoded_message():
+    message = MessageText(
+        proto="meshtastic",
+        sent_by="aabbccdd",
+        heard_by="ddccbbaa",
+        ch_name="FomaKiniaev",
+        rx_rssi=-1984,
+        rx_time="never",
+        hops=42,
+        text="Lorem Ipsum",
+    )
+
+    test_conf_str = "./tests/test.conf.local"
+    test_conf_path = Path(test_conf_str)
+
+    test_conf = ConfigApp(
+        config_path_str=test_conf_str if test_conf_path.is_file() else None
+    )
+
+    test_broker = MessageBroker()
+    test_processor = MessageProcessor(test_conf, test_broker)
+    test_client = ClientConsole(test_conf, test_broker)
+
+    test_processor._publish_to_broker(
+        test_processor._format_message(message, "russian")
+    )

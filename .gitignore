@@ -57,6 +57,10 @@ podman-compose.override.yml
 # Tests
 tests/test.conf.local
 
+# Protobufs
+src/protobufs
+src/generated
+
 # Other
 Thumbs.db
 

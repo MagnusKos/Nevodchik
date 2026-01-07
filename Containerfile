@@ -4,16 +4,12 @@ FROM ghcr.io/astral-sh/uv:0.9.20-python3.14-alpine AS builder
 
 # Enable bytecode compilation
 ENV UV_COMPILE_BYTECODE=1
-
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
-
-# Omit development dependencies
-ENV UV_NO_DEV=1
-
+# Add dev dependencies
+ENV UV_NO_DEV=0
 # Don't redownload Python, we already have it
 ENV UV_PYTHON_DOWNLOADS=0
-
 # Ensure installed tools can be executed out of the box
 ENV UV_TOOL_BIN_DIR=/usr/local/bin
 
@@ -24,9 +20,17 @@ WORKDIR /nevodchik
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --locked --no-install-project
+    uv sync --locked --no-install-project --extra dev
 
 COPY . /nevodchik
+
+# Download protobufs
+RUN apk add --no-cache bash curl unzip && \
+    bash dload-protobufs.sh && \
+    apk del bash curl unzip
+
+# Build protobufs
+RUN /nevodchik/build-protobufs.sh
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked
@@ -67,16 +71,16 @@ CMD ["uv", "run", "pytest", "-v", "--tb=short"]
 FROM python:3.14-alpine as worker
 
 # --- Environment vars to be set externally ---
-ENV MQTT_HOST="localhost"
-ENV MQTT_PORT=1883
-ENV MQTT_USER="user"
-ENV MQTT_PASSW="pass"
+# ENV MQTT_HOST="localhost"
+# ENV MQTT_PORT=1883
+# ENV MQTT_USER="user"
+# ENV MQTT_PASSW="pass"
 
-ENV IRC_HOST="localhost"
-ENV IRC_PORT=6667
-ENV IRC_NICK="Nevodchik"
+# ENV IRC_HOST="localhost"
+# ENV IRC_PORT=6667
+# ENV IRC_NICK="Nevodchik"
 
-ENV TG_TOKEN=""
+# ENV TG_TOKEN=""
 # --- ---
 
 # Create a new user
@@ -89,6 +93,11 @@ COPY --from=builder --chown=nevodchik:nevodchik /nevodchik /nevodchik
 
 # Place executables in the environment at the front of the path
 ENV PATH="/nevodchik/.venv/bin:$PATH"
+
+# Disable Python output buffering so logs appear immediately
+ENV PYTHONUNBUFFERED=1
+
+ENV PYTHONPATH="/nevodchik/src/generated:/nevodchik/src:${PYTHONPATH}"
 
 # User to start an app
 USER ${USER}
