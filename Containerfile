@@ -29,15 +29,8 @@ RUN apk add --no-cache bash curl unzip && \
     bash dload-protobufs.sh && \
     apk del bash curl unzip
 
-# Build protobufs (yep, this is not from build-protobufs.sh)
-RUN /nevodchik/.venv/bin/python -m grpc_tools.protoc \
-    -I"src/protobufs" \
-    --python_out="src/generated" \
-    --pyi_out="src/generated" \
-    --grpc_python_out="src/generated" \
-    $(find src/protobufs/meshtastic -name "*.proto" ! -name "deviceonly.proto") && \
-    mkdir -p src/generated/meshtastic && \
-    touch src/generated/__init__.py src/generated/meshtastic/__init__.py
+# Build protobufs
+RUN /nevodchik/build-protobufs.sh
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked
@@ -104,14 +97,12 @@ ENV PATH="/nevodchik/.venv/bin:$PATH"
 # Disable Python output buffering so logs appear immediately
 ENV PYTHONUNBUFFERED=1
 
-RUN echo $PYTHONPATH
 ENV PYTHONPATH="/nevodchik/src/generated:/nevodchik/src:${PYTHONPATH}"
 
 # User to start an app
 USER ${USER}
 
 WORKDIR /nevodchik
-
 
 # Run!
 CMD ["nevodchik"]
