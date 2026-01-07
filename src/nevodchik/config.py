@@ -18,6 +18,13 @@ class ConfigMQTT:
     pass
 
 
+@dataclass
+class ConfigTelegram:
+    token: str
+    chat: int
+    pass
+
+
 class ConfigApp:
     def __init__(self, config_path_str: str = "./config/nevodchik.conf"):
         self.config_path = Path(config_path_str)
@@ -26,12 +33,15 @@ class ConfigApp:
         self.config_mqtt = ConfigMQTT(
             host="localhost", port=1883, user="", passw="", topics=["msh/#"]
         )
+        self.config_telegram = ConfigTelegram(
+            token="4815162342:VGhlIE51bWJlcnMgUzFFMTg=", chat=-100
+        )
 
         # Load actual parameters
         self._load_config()
         pass
 
-    def __str__(self):
+    def __str__(self):  # ToDo: redo
         str_list = ["***"]
         if self.config_path.is_file:
             str_list.append(f"File in use: {self.config_path.absolute()}")
@@ -48,6 +58,10 @@ class ConfigApp:
                 "user": self.config_mqtt.user,
                 "passw": self.config_mqtt.passw,
                 "topics": self.config_mqtt.topics,
+            },
+            "telegram": {
+                "token": self.config_telegram.token,
+                "chat": self.config_telegram.chat
             }
         }
 
@@ -69,6 +83,7 @@ class ConfigApp:
 
         # Populate dataclasses
         self.config_mqtt = ConfigMQTT(**defaults["mqtt"])
+        self.config_telegram = ConfigTelegram(**defaults["telegram"])
 
         self._log_config()
         pass
@@ -79,6 +94,8 @@ class ConfigApp:
             "MQTT_PORT": ("mqtt", "port"),
             "MQTT_USER": ("mqtt", "user"),
             "MQTT_PASSW": ("mqtt", "passw"),
+            "TG_TOKEN": ("telegram", "token"),
+            "TG_CHAT": ("telegram", "chat"),
         }
 
         for env_key, (section, key) in env_mapping.items():
@@ -94,6 +111,11 @@ class ConfigApp:
         logger.info("Configuration loaded:")
         logger.info(
             f"\tMQTT: {self.config_mqtt.host}:{self.config_mqtt.port} (topics: {self.config_mqtt.topics})"
+        )
+
+        token_state = "set" if self.config_telegram.token else "not set"
+        logger.info(
+            f"\tTelegram: token is {token_state}, chat id = {self.config_telegram.chat})"
         )
         pass
 

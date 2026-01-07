@@ -11,7 +11,8 @@ readme = "README.md"
 dependencies = [
     "paho-mqtt",
     "protobuf>=4.0",
-    "pycryptodome==3.23.0"
+    "pycryptodome==3.23.0",
+    "python-telegram-bot==22.5"
 ]
 
 classifiers = [
