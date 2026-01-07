@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .config import ConfigApp
 from .decoder import build_decoder_chain
+from .broker import MessageBroker
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +51,9 @@ class MessageProcessor:
         },
     }
 
-    def __init__(self, config: ConfigApp):
+    def __init__(self, config: ConfigApp, broker: MessageBroker=None):
         self.config = config
+        self.broker = broker
         self.templates = self._load_templates()
         self.decoder_chain = build_decoder_chain()
 
@@ -66,7 +68,9 @@ class MessageProcessor:
 
         message_final = self._format_message(message_decoded, "russian")  # just for now
         logger.info(f"{message_final}")
-        print(message_final)
+
+        self._publish_to_broker(message_final)
+
         return message_final
 
     def _should_process(self, topic: str) -> bool:
@@ -131,3 +135,7 @@ class MessageProcessor:
                 **message.__dict__
             )  # fallback of the fallback, yep
         pass
+
+    def _publish_to_broker(self, message: str):
+        if self.broker:
+            self.broker.publish(message)

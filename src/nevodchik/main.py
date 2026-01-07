@@ -3,8 +3,10 @@ import logging
 import argparse
 
 from .config import ConfigApp
-from .client_mqtt import ClientMQTT
+from .connector_mqtt import ConnectorMQTT
 from .message_processor import MessageProcessor
+from .broker import MessageBroker
+from .client_console import ClientConsole
 
 default_config_file = "./config/nevodchik.conf"
 
@@ -30,11 +32,14 @@ def run():
 
     logger.info(f"{str(config)}")
 
-    processor = MessageProcessor(config)
-    client_mqtt = ClientMQTT(config, processor)
+    broker = MessageBroker()
+    processor = MessageProcessor(config, broker)
+    connector_mqtt = ConnectorMQTT(config, processor)
+
+    client_console = ClientConsole(config, broker)
 
     try:
-        client_mqtt.run()
+        connector_mqtt.run()
     except KeyboardInterrupt:
         logger.warning("Keyboard interruption, exiting...")
         print("Keyboard interruption, exiting...")
