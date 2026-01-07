@@ -9,7 +9,7 @@ import paho.mqtt.client as mqtt
 logger = logging.getLogger(__name__)
 
 
-class ClientMQTT:
+class ConnectorMQTT:
     def __init__(self, config: ConfigApp, processor: MessageProcessor):
         self.config = config.config_mqtt
         self.processor = processor
