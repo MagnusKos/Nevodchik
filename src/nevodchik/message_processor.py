@@ -6,16 +6,30 @@ from typing import Optional
 from dataclasses import dataclass
 
 from .config import ConfigApp
+from .decoder import build_decoder_chain
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class Message:
-    topic: str
-    payload: str
-    raw_payload: bytes
-    source: str = "mqtt"
+class MessageText:
+    proto: str
+    sent_by: str  # hex without 0x
+    heard_by: str  # hex without 0x
+    ch_name: str
+    rx_rssi: int
+    rx_time: str
+    hops: int
+    text: str
+    pass
+
+
+@dataclass
+class MessageInfo:
+    proto: str
+    node_id: str  # hex without 0x
+    node_name: str  # readable name
+    pass
 
 
 class MessageProcessor:
@@ -28,22 +42,19 @@ class MessageProcessor:
 
     def __init__(self, config: ConfigApp):
         self.config = config
+        self.decoder_chain = build_decoder_chain()
 
-    def process_mqtt_message(self, topic: str, payload: bytes) -> Optional[Message]:
-        """
-        Process an MQTT message from ClientMQTT.
+    def process_mqtt_message(
+        self, topic: str, payload: bytes
+    ) -> MessageText | MessageInfo | None:
+        message_decoded = self.decoder_chain.handle(topic, payload)
 
-        Returns:
-            Message object if passed filters, None otherwise
-        """
-        if not self._should_process(topic):
+        if not message_decoded:
+            logger.debug("Undecoded message")
             return None
-        decoded_payload = self._decode_payload(payload)
-        message = Message(
-            topic=topic, payload=decoded_payload, raw_payload=payload, source="mqtt"
-        )
-        logger.info(f"Processed message from {topic}")
-        return message
+
+        logger.info(f"{message_decoded}")
+        return message_decoded
 
     def _should_process(self, topic: str) -> bool:
         return True  # Just for now...
@@ -54,14 +65,3 @@ class MessageProcessor:
         #     if fnmatch.fnmatch(topic, pattern):
         #         return True
         # return False
-
-    def _decode_payload(self, payload: bytes) -> str:
-        try:
-            return json.dumps(json.loads(payload.decode("utf-8")))
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            pass
-        try:
-            return payload.decode("utf-8", errors="ignore")
-        except Exception:
-            pass
-        return f"<hex> {payload.hex()}"
