@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .broker import MessageBroker
-from .config import ConfigApp
+from .config import Configurator
 from .decoder import build_decoder_chain
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ class MessageProcessor:
         },
     }
 
-    def __init__(self, config: ConfigApp, broker: MessageBroker = None):
+    def __init__(self, config: Configurator, broker: MessageBroker = None):
         self.config = config
         self.broker = broker
         self.templates = self._load_templates()

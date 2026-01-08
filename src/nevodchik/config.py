@@ -29,7 +29,7 @@ class TargetTelegramBot(BaseModel):
     topic_id: Optional[int] = None
 
 
-class ConfigApp(BaseSettings):
+class Configurator(BaseSettings):
     mqtt: ConfigMQTT = ConfigMQTT()
     telegram_bots: List[ConfigTelegramBot] = []
 
@@ -58,11 +58,11 @@ class ConfigApp(BaseSettings):
         )
 
 
-def load_config_file(config_file: str) -> ConfigApp:
+def load_config_file(config_file: str) -> Configurator:
     """The factory for creating ConfigApp with custom config-file path"""
 
-    class DynamicConfigApp(ConfigApp):
-        model_config = ConfigApp.model_config.copy()
+    class DynamicConfigurator(Configurator):
+        model_config = Configurator.model_config.copy()
         model_config["toml_file"] = config_file
 
-    return DynamicConfigApp()
+    return DynamicConfigurator()

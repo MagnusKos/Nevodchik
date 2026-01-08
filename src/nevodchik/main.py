@@ -29,21 +29,21 @@ def run():
     logger.info(f"Loading config-file: {config_file}")
 
     try:
-        config_app = load_config_file(config_file)
+        configurator = load_config_file(config_file)
     except Exception as e:
         logger.critical(f"Failed to load config: {e}")
         return
 
     print("Fisherman is catching fish...")
 
-    logger.debug(f"{str(config_app)}")
+    logger.debug(f"{str(configurator)}")
 
     broker = MessageBroker()
-    processor = MessageProcessor(config_app, broker)
-    connector_mqtt = ConnectorMQTT(config_app.mqtt, processor)
+    processor = MessageProcessor(configurator, broker)
+    connector_mqtt = ConnectorMQTT(configurator.mqtt, processor)
 
-    client_console = ClientConsole(config_app, broker)  # noqa: F841
-    client_telegram = ClientTelegram(config_app.telegram_bots, broker)
+    client_console = ClientConsole(configurator, broker)  # noqa: F841
+    client_telegram = ClientTelegram(configurator.telegram_bots, broker)
     client_telegram.start()
 
     try:
