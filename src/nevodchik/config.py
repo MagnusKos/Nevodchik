@@ -16,10 +16,17 @@ class ConfigMQTT(BaseModel):
 
 
 class ConfigTelegramBot(BaseModel):
-    name: str = "default"
+    name: str = "MainBot"
     token: str
-    chat: int
-    topic: Optional[int] = None
+    targets: List[TargetTelegramBot] = []
+
+
+class TargetTelegramBot(BaseModel):
+    """Represents chats with topics for Telegram bot"""
+
+    descr: str = "MainChat"
+    chat_id: int
+    topic_id: Optional[int] = None
 
 
 class ConfigApp(BaseSettings):
