@@ -7,7 +7,7 @@ from telegram import Bot
 from telegram.error import TelegramError
 
 from .broker import MessageBroker
-from .config import ConfigApp
+from .config import ConfigTelegramBot
 
 logger = logging.getLogger(__name__)
 
@@ -17,13 +17,12 @@ class ClientTelegram:
     Telegram subscriber wrapping async python-telegram-bot.
     """
 
-    def __init__(self, config: ConfigApp, broker: MessageBroker):
-        self.config = config.config_telegram
+    def __init__(self, config: ConfigTelegramBot, broker: MessageBroker):
+        self.config = config
         self.broker = broker
 
         self.bot = Bot(token=self.config.token)
-        self.chat = self.config.chat
-        self.topic = self.config.topic
+
         self.message_queue: Queue[str] = Queue()
         self.loop: asyncio.AbstractEventLoop | None = None
         self.thread: Thread | None = None
@@ -85,9 +84,14 @@ class ClientTelegram:
 
     async def _send_message(self, message: str) -> None:
         """Send message to Telegram."""
-        try:
-            await self.bot.send_message(
-                chat_id=self.chat, text=message, message_thread_id=self.topic
-            )
-        except TelegramError as e:
-            logger.error(f"Telegram error: {e}")
+        for target in self.config.targets:
+            try:
+                await self.bot.send_message(
+                    chat_id=target.chat_id,
+                    message_thread_id=target.topic_id,
+                    text=message,
+                )
+            except TelegramError as e:
+                logger.error(
+                    f"Failed to send to {target.description} (ID: {target.chat_id}): {e}"
+                )
