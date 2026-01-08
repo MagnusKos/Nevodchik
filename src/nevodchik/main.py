@@ -5,11 +5,9 @@ import os
 from .broker import MessageBroker
 from .client_console import ClientConsole
 from .client_telegram import ClientTelegram
-from .config import ConfigApp
+from .config import load_config_file
 from .connector_mqtt import ConnectorMQTT
 from .message_processor import MessageProcessor
-
-default_config_file = "./config/nevodchik.conf"
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "CRITICAL")
 logging.basicConfig(
@@ -22,23 +20,30 @@ logger = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(prog="Nevodchik")
 parser.add_argument("-c", "--config", type=str)
 
+default_config_file = "./config/nevodchik.conf"
+
 
 def run():
     args = parser.parse_args()
-    config = ConfigApp(
-        args.config or os.environ.get("CONFIG_FILE") or default_config_file
-    )
+    config_file = args.config or os.environ.get("CONFIG_FILE") or default_config_file
+    logger.info(f"Loading config-file: {config_file}")
+
+    try:
+        config_app = load_config_file(config_file)
+    except Exception as e:
+        logger.critical(f"Failed to load config: {e}")
+        return
 
     print("Fisherman is catching fish...")
 
-    logger.info(f"{str(config)}")
+    logger.debug(f"{str(config_app)}")
 
     broker = MessageBroker()
-    processor = MessageProcessor(config, broker)
-    connector_mqtt = ConnectorMQTT(config, processor)
+    processor = MessageProcessor(config_app, broker)
+    connector_mqtt = ConnectorMQTT(config_app.mqtt, processor)
 
-    client_console = ClientConsole(config, broker)  # noqa: F841
-    client_telegram = ClientTelegram(config, broker)
+    client_console = ClientConsole(config_app, broker)  # noqa: F841
+    client_telegram = ClientTelegram(config_app.telegram_bots, broker)
     client_telegram.start()
 
     try:

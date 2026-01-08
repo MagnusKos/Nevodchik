@@ -56,3 +56,13 @@ class ConfigApp(BaseSettings):
             TomlConfigSettingsSource(settings_cls),
             file_secret_settings,
         )
+
+
+def load_config_file(config_file: str) -> ConfigApp:
+    """The factory for creating ConfigApp with custom config-file path"""
+
+    class DynamicConfigApp(ConfigApp):
+        model_config = ConfigApp.model_config.copy()
+        model_config["toml_file"] = config_file
+
+    return DynamicConfigApp()
