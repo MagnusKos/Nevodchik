@@ -1,15 +1,14 @@
-import pytest
 import logging
 import threading
-import sys
-import os
 from pathlib import Path
 
-from nevodchik.connector_mqtt import ConnectorMQTT
-from nevodchik.config import ConfigApp
-from nevodchik.message_processor import MessageProcessor, MessageText
+import pytest
+
 from nevodchik.broker import MessageBroker
 from nevodchik.client_console import ClientConsole
+from nevodchik.config import ConfigApp
+from nevodchik.connector_mqtt import ConnectorMQTT
+from nevodchik.message_processor import MessageProcessor, MessageText
 
 logger = logging.getLogger("TestMQTT")
 
@@ -33,7 +32,7 @@ def test_connection_client_mqtt():
             payload = msg.payload.decode("utf-8", errors="ignore")
         except Exception:
             payload = msg.payload.hex()
-        logger.info(f"Message:")
+        logger.info("Message:")
         logger.info(f"  Topic: {msg.topic}")
         logger.info(f"  Payload: {payload}")
         packet_received_event.set()
@@ -46,7 +45,7 @@ def test_connection_client_mqtt():
     try:
         test_client_mqtt.setup()
         test_client_mqtt.client.loop_start()
-        logger.info(f"Waiting for a packet for 60 seconds.")
+        logger.info("Waiting for a packet for 60 seconds.")
         received = packet_received_event.wait(timeout=60.0)
         if received:
             logger.info("Test complete.")
@@ -80,7 +79,7 @@ def test_decoded_message():
 
     test_broker = MessageBroker()
     test_processor = MessageProcessor(test_conf, test_broker)
-    test_client = ClientConsole(test_conf, test_broker)
+    test_client = ClientConsole(test_conf, test_broker)  # noqa: F841
 
     test_processor._publish_to_broker(
         test_processor._format_message(message, "russian")

@@ -1,16 +1,16 @@
 """Meshtastic protocol decoder."""
 
 import logging
-import struct
 from datetime import datetime, timezone
-from typing import Dict, Any
+from typing import Any, Dict, Optional
+
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
-import base64
 
 from generated.meshtastic import mesh_pb2, mqtt_pb2, portnums_pb2
+
 from .decoder import Decoder
-from .message_processor import MessageText, MessageInfo
+from .message_processor import MessageInfo, MessageText
 
 logger = logging.getLogger(__name__)
 

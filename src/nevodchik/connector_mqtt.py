@@ -1,10 +1,9 @@
-import asyncio
-import signal
-import sys
 import logging
+
+import paho.mqtt.client as mqtt
+
 from .config import ConfigApp
 from .message_processor import MessageProcessor
-import paho.mqtt.client as mqtt
 
 logger = logging.getLogger(__name__)
 

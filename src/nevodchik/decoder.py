@@ -1,9 +1,10 @@
 # src/nevodchik/decoder.py
 """Base decoder and factory."""
 
-from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any
 import logging
+from abc import ABC, abstractmethod
+
+from .message_processor import MessageInfo, MessageText
 
 logger = logging.getLogger(__name__)
 

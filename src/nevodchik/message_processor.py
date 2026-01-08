@@ -1,15 +1,12 @@
 # message_processor.py
-import json
-import tomllib
 import logging
-import fnmatch
-from typing import Optional
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
+from .broker import MessageBroker
 from .config import ConfigApp
 from .decoder import build_decoder_chain
-from .broker import MessageBroker
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +48,7 @@ class MessageProcessor:
         },
     }
 
-    def __init__(self, config: ConfigApp, broker: MessageBroker=None):
+    def __init__(self, config: ConfigApp, broker: MessageBroker = None):
         self.config = config
         self.broker = broker
         self.templates = self._load_templates()
@@ -127,7 +124,7 @@ class MessageProcessor:
         Returns:
             Formatted message string
         """
-        
+
         if format_type in self.templates["text"]:
             return self.templates["text"][format_type].format(**message.__dict__)
         else:

@@ -1,14 +1,13 @@
-import os
-import logging
 import argparse
+import logging
+import os
 
+from .broker import MessageBroker
+from .client_console import ClientConsole
+from .client_telegram import ClientTelegram
 from .config import ConfigApp
 from .connector_mqtt import ConnectorMQTT
 from .message_processor import MessageProcessor
-from .broker import MessageBroker
-
-from .client_console import ClientConsole
-from .client_telegram import ClientTelegram
 
 default_config_file = "./config/nevodchik.conf"
 
@@ -38,7 +37,7 @@ def run():
     processor = MessageProcessor(config, broker)
     connector_mqtt = ConnectorMQTT(config, processor)
 
-    client_console = ClientConsole(config, broker)
+    client_console = ClientConsole(config, broker)  # noqa: F841
     client_telegram = ClientTelegram(config, broker)
     client_telegram.start()
 
