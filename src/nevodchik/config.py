@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 class ConfigMQTT(BaseModel):
     host: str = "localhost"
     port: int = 1883
-    user: str = ""
-    passw: str = ""
+    user: str | None = None
+    passw: str | None = None
     topics: List[str] = ["msh/#"]
 
 
