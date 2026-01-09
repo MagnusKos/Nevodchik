@@ -2,7 +2,7 @@ import asyncio
 import logging
 from queue import Queue
 from threading import Thread
-from types import List
+from typing import List
 
 from telegram import Bot
 from telegram.error import TelegramError
