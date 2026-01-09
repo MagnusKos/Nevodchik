@@ -1,11 +1,9 @@
 # message_processor.py
 import logging
-import tomllib
 from dataclasses import dataclass
-from pathlib import Path
 
 from .broker import MessageBroker
-from .config import Configurator
+from .config import ConfigMessageTemplates
 from .decoder import build_decoder_chain
 
 logger = logging.getLogger(__name__)
@@ -40,18 +38,11 @@ class MessageProcessor:
     3. Formats for downstream clients
     """
 
-    DEFAULT_TEMPLATES = {
-        "text": {
-            "russian": "Сообщение от {sent_by} в {ch_name}: {text}",
-            "english": "Message from {sent_by} in {ch_name}: {text}",
-            "compact": "[{ch_name}] {sent_by}: {text} (RSSI={rx_rssi})",
-        },
-    }
-
-    def __init__(self, config: Configurator, broker: MessageBroker = None):
-        self.config = config
+    def __init__(
+        self, config_tmplts: ConfigMessageTemplates, broker: MessageBroker = None
+    ):
+        self.config_tmplts = config_tmplts
         self.broker = broker
-        self.templates = self._load_templates()
         self.decoder_chain = build_decoder_chain()
 
     def process_mqtt_message(
@@ -80,37 +71,6 @@ class MessageProcessor:
         #         return True
         # return False
 
-    def _load_templates(
-        self, config_file: str = "./config/messages.conf"
-    ) -> dict[str, dict[str, str]]:
-        """
-        Load templates from TOML config with fallback to defaults.
-
-        Args:
-            config_file: Path to config.toml file
-
-        Returns:
-            Nested dictionary of {message_type: {template_name: template_string}}
-        """
-        config_path = Path(config_file)
-
-        if config_path.is_file():
-            with config_path.open("rb") as f:
-                config = tomllib.load(f)
-            templates = config.get("message_templates", {})
-
-            result = self.DEFAULT_TEMPLATES.copy()
-            for msg_type, msg_templates in templates.items():
-                result[msg_type] = {
-                    **self.DEFAULT_TEMPLATES.get(msg_type, {}),
-                    **msg_templates,
-                }
-            return result
-        else:
-            logger.warning(f"Config file {self.config_path} not found, using defaults.")
-            return self.DEFAULT_TEMPLATES
-        pass
-
     def _format_message(
         self, message: MessageText, format_type: str
     ) -> str:  # ToDo: different types of msgs and defaults
@@ -125,13 +85,13 @@ class MessageProcessor:
             Formatted message string
         """
 
-        if format_type in self.templates["text"]:
-            return self.templates["text"][format_type].format(**message.__dict__)
-        else:
-            return self.DEFAULT_TEMPLATES["text"]["compact"].format(
-                **message.__dict__
-            )  # fallback of the fallback, yep
-        pass
+        tmplt_str = self.config_tmplts.text.get(format_type)
+
+        if not tmplt_str:
+            # Fallback logic
+            tmplt_str = self.templates.text.get("compact", "Error: No template")
+
+        return tmplt_str.format(**message.__dict__)
 
     def _publish_to_broker(self, message: str):
         if self.broker:

@@ -39,11 +39,12 @@ def run():
     logger.debug(f"{str(configurator)}")
 
     broker = MessageBroker()
-    processor = MessageProcessor(configurator, broker)
+    processor = MessageProcessor(configurator.message_templates, broker)
     connector_mqtt = ConnectorMQTT(configurator.mqtt, processor)
 
     client_console = ClientConsole(configurator, broker)  # noqa: F841
     client_telegram = ClientTelegram(configurator.telegram_bots, broker)
+
     client_telegram.start()
 
     try:
