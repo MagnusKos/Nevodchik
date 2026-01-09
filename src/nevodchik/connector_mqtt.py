@@ -2,15 +2,15 @@ import logging
 
 import paho.mqtt.client as mqtt
 
-from .config import ConfigApp
+from .config import ConfigMQTT
 from .message_processor import MessageProcessor
 
 logger = logging.getLogger(__name__)
 
 
 class ConnectorMQTT:
-    def __init__(self, config: ConfigApp, processor: MessageProcessor):
-        self.config = config.config_mqtt
+    def __init__(self, config: ConfigMQTT, processor: MessageProcessor):
+        self.config = config
         self.processor = processor
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
         self.client.on_connect = self.on_connect
@@ -19,7 +19,7 @@ class ConnectorMQTT:
         pass
 
     def setup(self):
-        self.client.username_pw_set(self.config.user or None, self.config.passw or None)
+        self.client.username_pw_set(self.config.user, self.config.passw)
         self.client.connect_async(self.config.host, self.config.port, keepalive=60)
         pass
 

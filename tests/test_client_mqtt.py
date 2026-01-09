@@ -6,7 +6,7 @@ import pytest
 
 from nevodchik.broker import MessageBroker
 from nevodchik.client_console import ClientConsole
-from nevodchik.config import ConfigApp
+from nevodchik.config import Configurator
 from nevodchik.connector_mqtt import ConnectorMQTT
 from nevodchik.message_processor import MessageProcessor, MessageText
 
@@ -18,7 +18,7 @@ def test_connection_client_mqtt():
     test_conf_str = "./tests/test.conf.local"
     test_conf_path = Path(test_conf_str)
 
-    test_conf = ConfigApp(
+    test_conf = Configurator(
         config_path_str=test_conf_str if test_conf_path.is_file() else None
     )
     test_processor = MessageProcessor(test_conf)
@@ -73,7 +73,7 @@ def test_decoded_message():
     test_conf_str = "./tests/test.conf.local"
     test_conf_path = Path(test_conf_str)
 
-    test_conf = ConfigApp(
+    test_conf = Configurator(
         config_path_str=test_conf_str if test_conf_path.is_file() else None
     )
 
