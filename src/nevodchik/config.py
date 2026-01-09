@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Optional
 
+import tomli_w
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict, TomlConfigSettingsSource
 
@@ -67,16 +68,46 @@ class Configurator(BaseSettings):
             file_secret_settings,
         )
 
+    @classmethod
+    def load(cls, main_config_file: str) -> Configurator:
+        """
+        The factory for creating Configurator with custom config-file path
+        """
 
-def load_config_file(main_config_file: str) -> Configurator:
-    """The factory for creating ConfigApp with custom config-file path"""
+        main_config_file_path = Path(main_config_file).resolve()
 
-    main_config_file_path = Path(main_config_file).resolve()
+        templates_config_file_path = main_config_file_path.parent / "messages.conf"
 
-    templates_config_file_path = main_config_file_path.parent / "messages.conf"
+        class DynamicConfigurator(Configurator):
+            model_config = Configurator.model_config.copy()
+            model_config["toml_file"] = [
+                main_config_file_path,
+                templates_config_file_path,
+            ]
 
-    class DynamicConfigurator(Configurator):
-        model_config = Configurator.model_config.copy()
-        model_config["toml_file"] = [main_config_file_path, templates_config_file_path]
+        return DynamicConfigurator()
 
-    return DynamicConfigurator()
+    @classmethod
+    def _ensure_config_files(cls, main_config_path: Path) -> None:
+        """
+        Generates default config files if they are missing.
+        """
+        templates_config_path = main_config_path.parent / "messages.conf"
+
+        main_config_path.parent.mkdir(parents=True, exist_ok=True)
+
+        defaults = cls()
+
+        if not main_config_path.exists():
+            logger.info(f"Generating default main config at: {main_config_path}")
+            main_data = defaults.model_dump(mode="json", exclude={"message_templates"})
+            with main_config_path.open("wb") as f:
+                tomli_w.dump(main_data, f)
+
+        if not templates_config_path.exists():
+            logger.info(f"Generating default templates at: {templates_config_path}")
+            templates_data = {
+                "message_templates": defaults.message_templates.model_dump(mode="json")
+            }
+            with templates_config_path.open("wb") as f:
+                tomli_w.dump(templates_data, f)

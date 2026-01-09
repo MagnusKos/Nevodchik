@@ -5,7 +5,7 @@ import os
 from .broker import MessageBroker
 from .client_console import ClientConsole
 from .client_telegram import ClientTelegram
-from .config import load_config_file
+from .config import Configurator
 from .connector_mqtt import ConnectorMQTT
 from .message_processor import MessageProcessor
 
@@ -29,7 +29,7 @@ def run():
     logger.info(f"Loading config-file: {config_file}")
 
     try:
-        configurator = load_config_file(config_file)
+        configurator = Configurator.load(config_file)
     except Exception as e:
         logger.critical(f"Failed to load config: {e}")
         return
