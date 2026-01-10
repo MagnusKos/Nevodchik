@@ -60,6 +60,6 @@ class ClientTelegram(ClientBase):
             )
         except TelegramError as e:
             logger.error(
-                f"Bot '{bot_name}' failed to send to target '{target.description}': {e}"
+                f"Bot '{bot_name}' failed to send to target '{target.descr}': {e}"
             )
         pass
