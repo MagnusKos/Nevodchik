@@ -4,6 +4,7 @@ import logging
 import os
 from typing import List
 
+from .client_base import ClientBase
 from .client_console import ClientConsole
 from .client_telegram import ClientTelegram
 from .config import Configurator
@@ -25,7 +26,9 @@ default_config_file = "./config/nevodchik.conf"
 
 
 class Application:
-    def __init__(self, clients: List | None, configurator: Configurator | None):
+    def __init__(
+        self, clients: List[ClientBase] | None, configurator: Configurator | None
+    ):
         self.is_running = False
 
         if configurator:
@@ -37,14 +40,18 @@ class Application:
         self.service_mqtt = ServiceMQTT(self.configurator.mqtt, self.queue_service)
         self.processor = MessageProcessor(self.configurator.message_templates)
 
-        if clients:
-            self.clients = clients
-        else:
-            self.clients = [
-                ClientConsole(configurator),  # noqa: F841
-                ClientTelegram(configurator.telegram_bots),
-            ]
+        self.clients = clients or self._create_default_clients()
         pass
+
+    def attach_client(self, client: ClientBase):
+        """A simple method for adding a new client into the app."""
+        self.clients.append(client)
+
+    def _create_default_clients(self) -> List[ClientBase]:
+        return [
+            ClientTelegram(self.configurator.telegram_bots),
+            ClientConsole(self.configurator),
+        ]
 
     async def _worker(self):
         logger.info("Application worker started.")

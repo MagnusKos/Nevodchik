@@ -5,12 +5,13 @@ from typing import List
 from telegram import Bot
 from telegram.error import TelegramError
 
+from .client_base import ClientBase
 from .config import ConfigTelegramBot
 
 logger = logging.getLogger(__name__)
 
 
-class ClientTelegram:
+class ClientTelegram(ClientBase):
     """
     Telegram-bot helper on top of the python-telegram-bot.
     """

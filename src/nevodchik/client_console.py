@@ -1,9 +1,11 @@
 import logging
 
+from .client_base import ClientBase
+
 logger = logging.getLogger(__name__)
 
 
-class ClientConsole:
+class ClientConsole(ClientBase):
     """Very simple client that prints out a message to the console"""
 
     def __init__(self, config):
