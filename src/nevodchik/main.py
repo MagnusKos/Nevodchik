@@ -1,13 +1,15 @@
 import argparse
+import asyncio
 import logging
 import os
+from typing import List
 
-from .broker import MessageBroker
+from .client_base import ClientBase
 from .client_console import ClientConsole
 from .client_telegram import ClientTelegram
 from .config import Configurator
-from .connector_mqtt import ConnectorMQTT
 from .message_processor import MessageProcessor
+from .service_mqtt import ServiceMQTT
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "CRITICAL")
 logging.basicConfig(
@@ -23,7 +25,69 @@ parser.add_argument("-c", "--config", type=str)
 default_config_file = "./config/nevodchik.conf"
 
 
+class Application:
+    def __init__(
+        self,
+        clients: List[ClientBase] | None = None,
+        configurator: Configurator | None = None,
+    ):
+        self.is_running = False
+
+        if configurator:
+            self.configurator = configurator
+        else:
+            self.configurator = Configurator()
+
+        self.queue_service = asyncio.Queue()
+        self.service_mqtt = ServiceMQTT(self.configurator.mqtt, self.queue_service)
+        self.processor = MessageProcessor(self.configurator.message_templates)
+
+        self.clients = clients or self._create_default_clients()
+        pass
+
+    def attach_client(self, client: ClientBase):
+        """A simple method for adding a new client into the app."""
+        self.clients.append(client)
+
+    def _create_default_clients(self) -> List[ClientBase]:
+        return [
+            ClientTelegram(self.configurator.telegram_bots),
+            ClientConsole(self.configurator),
+        ]
+
+    async def _worker(self):
+        logger.info("Application worker started.")
+        while self.is_running:
+            message_raw = await self.queue_service.get()
+
+            try:
+                message_cooked = self.processor.process_mqtt_message(
+                    message_raw.topic.value, message_raw.payload
+                )
+                if message_cooked:
+                    for client in (
+                        self.clients
+                    ):  # fire-and-forget 'cause some clients could be sluggish
+                        asyncio.create_task(client.send_message(message_cooked))
+
+            except Exception as e:
+                logger.exception(f"Error processing message: {e}")
+            finally:
+                self.queue_service.task_done()
+        pass
+
+    async def run(self):
+        self.is_running = True
+        worker_task = asyncio.create_task(self._worker())
+
+        await self.service_mqtt.run()
+
+        self.is_running = False
+        worker_task.cancel()
+
+
 def run():
+    """Nevodchik's entry point."""
     args = parser.parse_args()
     config_file = args.config or os.environ.get("CONFIG_FILE") or default_config_file
     logger.info(f"Loading config-file: {config_file}")
@@ -35,22 +99,11 @@ def run():
         return
 
     print("Fisherman is catching fish...")
-
-    logger.debug(f"{str(configurator)}")
-
-    broker = MessageBroker()
-    processor = MessageProcessor(configurator.message_templates, broker)
-    connector_mqtt = ConnectorMQTT(configurator.mqtt, processor)
-
-    client_console = ClientConsole(configurator, broker)  # noqa: F841
-    client_telegram = ClientTelegram(configurator.telegram_bots, broker)
-
-    client_telegram.start()
+    app = Application(configurator=configurator)
 
     try:
-        connector_mqtt.run()
+        asyncio.run(app.run())
     except KeyboardInterrupt:
         logger.warning("Keyboard interruption, exiting...")
         print("Keyboard interruption, exiting...")
-        client_telegram.stop()
     pass

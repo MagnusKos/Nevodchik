@@ -1,21 +1,17 @@
 import logging
 
+from .client_base import ClientBase
+
 logger = logging.getLogger(__name__)
 
 
-class ClientConsole:
-    """Very simple client that listens to MessageBroker."""
+class ClientConsole(ClientBase):
+    """Very simple client that prints out a message to the console"""
 
-    def __init__(self, config, broker):
+    def __init__(self, config):
         self.config = config  # not in use
-        self.broker = broker
 
-        if self.broker:
-            self.broker.subscribe("MessageText", self.on_message)
-            logger.info("Console client subscribed to messages")
-
-    def on_message(self, message: str):
+    async def send_message(self, message: str):
         """Handle incoming processed messages."""
-        logger.info(f"[Console]\n{message}")
         print(message)
         pass

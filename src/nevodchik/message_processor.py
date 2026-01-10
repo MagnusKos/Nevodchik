@@ -1,7 +1,6 @@
 # message_processor.py
 import logging
 
-from .broker import MessageBroker
 from .config import ConfigMessageTemplates
 from .decoder import build_decoder_chain
 from .models import MessageInfo, MessageText
@@ -17,28 +16,23 @@ class MessageProcessor:
     3. Formats for downstream clients
     """
 
-    def __init__(
-        self, config_tmplts: ConfigMessageTemplates, broker: MessageBroker = None
-    ):
+    def __init__(self, config_tmplts: ConfigMessageTemplates):
         self.config_tmplts = config_tmplts
-        self.broker = broker
         self.decoder_chain = build_decoder_chain()
 
-    def process_mqtt_message(
-        self, topic: str, payload: bytes
-    ) -> MessageText | MessageInfo | None:
+    def process_mqtt_message(self, topic: str, payload: bytes) -> str | None:
         message_decoded = self.decoder_chain.handle(topic, payload)
 
         if not message_decoded:
             logger.debug("Undecoded message")
             return None
 
-        message_final = self._format_message(message_decoded, "russian")  # just for now
-        logger.info(f"{message_final}")
+        message_cooked = self._format_message(
+            message_decoded, "russian"
+        )  # just for now
+        logger.info(f"{message_cooked}")
 
-        self._publish_to_broker(message_final)
-
-        return message_final
+        return message_cooked
 
     def _should_process(self, topic: str) -> bool:
         return True  # Just for now...
@@ -51,7 +45,7 @@ class MessageProcessor:
         # return False
 
     def _format_message(
-        self, message: MessageText, format_type: str
+        self, message: MessageText | MessageInfo, format_type: str
     ) -> str:  # ToDo: different types of msgs and defaults
         """
         Format message using loaded template.
@@ -68,10 +62,6 @@ class MessageProcessor:
 
         if not tmplt_str:
             # Fallback logic
-            tmplt_str = self.templates.text.get("compact", "Error: No template")
+            tmplt_str = self.config_tmplts.text.get("compact", "Error: No template")
 
         return tmplt_str.format(**message.__dict__)
-
-    def _publish_to_broker(self, message: str):
-        if self.broker:
-            self.broker.publish(message)
