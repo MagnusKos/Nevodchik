@@ -27,7 +27,9 @@ default_config_file = "./config/nevodchik.conf"
 
 class Application:
     def __init__(
-        self, clients: List[ClientBase] | None, configurator: Configurator | None
+        self,
+        clients: List[ClientBase] | None = None,
+        configurator: Configurator | None = None,
     ):
         self.is_running = False
 
