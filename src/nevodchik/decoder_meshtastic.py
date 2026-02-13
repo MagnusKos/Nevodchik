@@ -40,6 +40,9 @@ class DecoderMeshtastic(Decoder):
         ]
     )
 
+    def __init__(self, next_decoder: Decoder | None = None):
+        super().__init__(next_decoder)
+
     def can_decode(self, topic: str, payload: bytes) -> bool:
         return "msh/" in topic  # This needs to be more specific
 
@@ -70,10 +73,15 @@ class DecoderMeshtastic(Decoder):
 
             sent_by = f"{sent_by_int:X}"
             heard_by = f"{heard_by_int:X}"
+            rx_time = ""
 
-            rx_time = datetime.fromtimestamp(
-                mesh_packet.rx_time, tz=timezone.utc
-            ).strftime("%H:%M:%S")
+            if self.timestamp_source == "server":  # ToDo: timestamp selector!
+                utc_time = datetime.now(timezone.utc)
+                rx_time = utc_time.astimezone().strftime("%H:%M:%S")
+            elif self.timestamp_source == "remote":
+                rx_time = datetime.fromtimestamp(
+                    mesh_packet.rx_time, tz=timezone.utc
+                ).strftime("%H:%M:%S")
 
             hops_travelled = mesh_packet.hop_start - mesh_packet.hop_limit
 

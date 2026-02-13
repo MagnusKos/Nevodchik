@@ -12,6 +12,7 @@ class Decoder(ABC):
     def __init__(self, next_decoder: Decoder | None = None):
         """Initialize decoder with optional next decoder in chain."""
         self.next_decoder = next_decoder
+        self.timestamp_source = "server"  # ToDo: timestamp selector!
 
     @abstractmethod
     def can_decode(self, topic: str, payload: bytes) -> bool:
