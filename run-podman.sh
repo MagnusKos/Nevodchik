@@ -46,6 +46,7 @@ Usage: ./run-podman.sh [COMMAND]
 
 Commands:
   run [options]        Build and run application (target: worker)
+  image                Build application image only (target: worker), do not run it
   test                 Build and run tests (target: tester)
   test-interactive     Run tests interactively (pytest -v -s)
   logs                 View application logs (only works if container exists)
@@ -75,6 +76,16 @@ EOF
 CMD="${1:-run}"
 
 case "$CMD" in
+  image)
+    cleanup_containers
+
+    echo "Building image only (no run)..."
+    podman build --target worker -t "$IMAGE_NAME" --label "$PROJECT_LABEL" .
+
+    echo "Built: $IMAGE_NAME"
+    echo "You can now run it via Podman / Podman Desktop with custom mounts, ports, envs, etc."
+    ;;
+
   run)
     cleanup_containers
 
